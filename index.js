@@ -1,11 +1,22 @@
 import express from "express";
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { error } from "console";
+import indexData from './indexing.js';
+import chat from "./dataRetrival.js";
+import multer from "multer";
+import cors from 'cors';
+import fs from "fs";
+import path from "path";
 
+const upload = multer({ storage: multer.memoryStorage() });
 const PORT = 3000;
 
 const app = express();
+
+app.use(express.json());
+app.use(express.text());
+app.use(express.urlencoded({ extended: true }));
+
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
@@ -13,32 +24,56 @@ const io = new Server(server, {
     }
 });
 
-app.post('/indexData', (req, res) => {
+app.use(cors({
+    origin: "*"
+}));
+
+app.post('/indexData', upload.single("file"), async (req, res) => {
     try {
-        const { filePath, fileType } = req.body;
-        if (!filePath || !fileType) {
+        console.log('called');
+
+        let { type } = req.body;
+        let file;
+
+        if (req.file) {
+            // Save buffer to temp file
+            const tempDir = path.join(process.cwd(), "tmp_uploads");
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+            file = path.join(tempDir, req.file.originalname);
+            fs.writeFileSync(file, req.file.buffer);
+        } else if (req.body.file) {
+            // For URLs or raw text
+            file = req.body.file;
+        }
+
+        if (!file || !type) {
             return res.status(400).json({
                 success: false,
-                error: "Both filePath and fileType are required",
+                error: "Both file and type are required",
             });
         }
-        const response = indexData(filePath, fileType);
+
+        console.log("Indexing:", file, type);
+
+        const response = await indexData(file, type);
+
+        // cleanup if it was a real uploaded file
+        if (req.file) {
+            fs.unlinkSync(file);
+        }
+
         console.log(response);
+
         return res.status(200).json({
             success: true,
             message: 'Successfully indexed the data'
         });
     } catch (error) {
         console.log('Error in indexing the data', error);
-        if (error.message || error.status) {
-            return res.status(error.status || 500).json({
-                success: false,
-                error: error.message || 'Internal Server Error',
-            });
-        }
         return res.status(500).json({
             success: false,
-            error: "Internal Server Error",
+            error: error.message || "Internal Server Error",
         });
     }
 });
@@ -48,6 +83,12 @@ io.on('connection', (socket) => {
     socket.on('MessageFromClient', async (data) => {
         try {
             console.log(data);
+            const response = await chat(data.content);
+            const res = JSON.parse(response);
+
+            socket.emit('MessageFromServer', {
+                content: res?.response
+            });
         } catch (error) {
             console.log("Socket Error: ", error);
             socket.emit('MessageFromServer', {
@@ -60,7 +101,7 @@ io.on('connection', (socket) => {
 
 server.listen(PORT, async () => {
     try {
-        console.log(`Server is runing on http://localhost:${PORT}`);
+        console.log(`Server is running on http://localhost:${PORT}`);
     } catch (error) {
         console.log(`Error in connection ${error}`);
     }
