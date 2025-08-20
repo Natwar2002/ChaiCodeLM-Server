@@ -30,8 +30,6 @@ app.use(cors({
 
 app.post('/indexData', upload.single("file"), async (req, res) => {
     try {
-        console.log('called');
-
         let { type } = req.body;
         let file;
 
@@ -58,7 +56,7 @@ app.post('/indexData', upload.single("file"), async (req, res) => {
 
         const response = await indexData(file, type);
 
-        // cleanup if it was a real uploaded file
+        // cleanup 
         if (req.file) {
             fs.unlinkSync(file);
         }
