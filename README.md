@@ -1,6 +1,6 @@
 # 📒 ChaiCode-LM Backend
 
-This is the backend for **Notebook-LM like app**, built with **Node.js + Express + LangChain.js**, designed to handle **data ingestion, embedding storage, and retrieval**.  
+This is the backend for **ChaiCode-LM like app**, built with **Node.js + Express + LangChain.js**, designed to handle **data ingestion, embedding storage, and retrieval**.  
 It provides APIs to **index data** from multiple sources, chunk them, store embeddings in **Qdrant Vector Database**, and retrieve relevant knowledge using embeddings search.  
 It also includes a **real-time communication pipeline** via **Socket.IO**.
 
@@ -45,3 +45,4 @@ It also includes a **real-time communication pipeline** via **Socket.IO**.
 git clone https://github.com/Natwar2002/ChaiCodeLM-Server.git
 cd ChaiCodeLM-Server
 npm install
+npm start
