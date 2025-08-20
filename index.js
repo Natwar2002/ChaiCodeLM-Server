@@ -51,6 +51,8 @@ app.post('/indexData', upload.single("file"), async (req, res) => {
             file = req.body.file;
         }
 
+        console.log(file, type);
+
         if (!file || !type) {
             return res.status(400).json({
                 success: false,
