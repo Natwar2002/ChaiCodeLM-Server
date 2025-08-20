@@ -41,7 +41,6 @@ It also includes a **real-time communication pipeline** via **Socket.IO**.
 
 ## 📦 Setup Guide
 
-### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/Natwar2002/ChaiCodeLM-Server.git
 cd ChaiCodeLM-Server
