@@ -28,6 +28,12 @@ app.use(cors({
     origin: "*"
 }));
 
+app.get('/ping', (req, res) => {
+    res.status(200).json({
+        message: 'Pong'
+    })
+});
+
 app.post('/indexData', upload.single("file"), async (req, res) => {
     try {
         let { type } = req.body;
@@ -76,21 +82,37 @@ app.post('/indexData', upload.single("file"), async (req, res) => {
     }
 });
 
+let dataProcessingStatus;
+
+export function emitData(param) {
+    if (dataProcessingStatus) {
+        dataProcessingStatus.emit('LoadingDoc', param);
+    } else {
+        console.log("Socket not initialized");
+    }
+}
+
 io.on('connection', (socket) => {
-    console.log(socket.id);
+    if (socket.id) {
+        dataProcessingStatus = socket;
+    }
     socket.on('MessageFromClient', async (data) => {
         try {
-            console.log(data);
             const response = await chat(data.content);
-            const res = JSON.parse(response);
+            let res;
+            if (typeof response === "string") {
+                res = JSON.parse(response);
+            } else {
+                res = response;
+            }
 
-            socket.emit('MessageFromServer', {
-                content: res?.response
+            socket.emit("MessageFromServer", {
+                content: res?.content || "No response generated.",
+                sources: res?.sources || [],
             });
         } catch (error) {
             console.log("Socket Error: ", error);
             socket.emit('MessageFromServer', {
-                expert: data?.expert,
                 content: "Something went wrong..."
             });
         }

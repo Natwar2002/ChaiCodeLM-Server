@@ -10,6 +10,7 @@ import { QdrantVectorStore } from "@langchain/qdrant";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 
 import "dotenv/config";
+import { emitData } from "./index.js";
 
 /**
  * Unified Indexing Pipeline
@@ -20,7 +21,8 @@ export default async function indexData(source, type) {
     try {
         let loader;
         let docs;
-        console.log('Indexing started...');
+        console.log('Indexing started.');
+        emitData(1);
 
         switch (type.toLowerCase()) {
             case "pdf":
@@ -84,6 +86,7 @@ export default async function indexData(source, type) {
         }
 
         console.log('Loading complete');
+        emitData(2);
 
         // 2. Create embeddings
         const embeddings = new GoogleGenerativeAIEmbeddings({
@@ -92,19 +95,22 @@ export default async function indexData(source, type) {
         });
 
         console.log('Embedding complete, Starting to store vectors in the db');
+        emitData(3);
 
         // 3. Push into ONE single collection
         const vectorStore = await QdrantVectorStore.fromDocuments(
             docs,
             embeddings,
             {
-                url: 'https://9fc2947c-4b7f-4343-841f-813773fdc967.europe-west3-0.gcp.cloud.qdrant.io:6333',
+                url: process.env.QDRANT_URL,
                 apiKey: process.env.QDRANT_KEY,
                 collectionName: "knowledge-base", // single collection for everything
             }
         );
 
         console.log(`Indexing completed for ${type}`);
+        emitData(4);
+
         return vectorStore;
     } catch (error) {
         console.log(`Error indexing ${type}:`, error);
